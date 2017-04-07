@@ -1,0 +1,11 @@
+ <buzz_controller_footbot id="bcf">
+    <actuators>
+      <differential_steering implementation="default" />
+      <leds                  implementation="default" medium="leds" />
+      <range_and_bearing implementation="default" />
+    </actuators>
+    <sensors>
+      <range_and_bearing implementation="medium" medium="rab" show_rays="true" noise_std_dev="0" />
+    </sensors>
+    <params bytecode_file="yourScript.bo" debug_file="yourScript.bdb" />
+  </buzz_controller_footbot>
