@@ -44,7 +44,7 @@
 	        <range_and_bearing implementation="medium" medium="rab" show_rays="true" noise_std_dev="0" packet_drop_prob="0"/>
 	      </sensors>
 		  
-	      <params bytecode_file="pivoting.bo" debug_file="pivoting.bdb" >
+	      <params bytecode_file="gradient.bo" debug_file="gradient.bdb" >
 	       <wheel_turning hard_turn_angle_threshold="90"
 	       					soft_turn_angle_threshold="70"
 	       					no_turn_threshold="10"
@@ -59,10 +59,10 @@
 	  
 
     <distribute>
-      <position method="uniform" min="-1,-1,0" max="1,1,0" />
+      <position method="uniform" min="-4,-4,0" max="4,4,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="6" max_trials="100" base_num="0">
-        <foot-bot id="fb" rab_data_size="500" rab_range="30">
+      <entity quantity="25" max_trials="100" base_num="0">
+        <foot-bot id="fb" rab_data_size="500">
           <controller config="fdc" />
         </foot-bot>
       </entity>

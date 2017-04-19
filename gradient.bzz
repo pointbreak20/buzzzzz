@@ -1,0 +1,33 @@
+function init() {
+  iteration = 0
+  if(id == 0) {
+    # Source robot
+    mydist = 0.
+  }
+  else {
+    # Other robots
+    mydist = 1000.
+    # Listen to other robots' distances
+    neighbors.listen("dist_to_source",
+      function(value_id, value, robot_id) {
+        mydist = math.min(
+          mydist,
+          neighbors.get(robot_id).distance + value)
+      })
+  }
+}
+
+function step() {
+  debug(mydist)
+  # if(id > 0) {
+  #   goto(5.0,5.0)
+  # }
+  # neighbors.broadcast("dist_to_source", mydist)
+  if(iteration % 30 == 0) {
+    neighbors.broadcast("dist_to_source", mydist)
+  }
+  iteration = iteration + 1
+}
+
+function destroy() {
+}
