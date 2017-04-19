@@ -53,7 +53,7 @@ function step() {
 		setleds(0,0,0)
 	}
 
-	if(iteration > 100) {
+	if(iteration > 50 and iteration % 10 == 0) {
 		sendOffset()
 	}
 }
