@@ -1,0 +1,142 @@
+include "include/vec2.bzz"
+# Write a table as if it was a matrix
+function write_knowledge(k, row, col, val) {
+    var key = string.concat(string.tostring(row),"-",string.tostring(col))
+    k[key] = val
+}
+
+# Read a table as if it was a matrix
+function read_knowledge(k, row, col) {
+    var key = string.concat(string.tostring(row),"-",string.tostring(col))
+    if (k[key] == nil) {
+        log("Warning: reading 'nil' value from the knowledge table, returning -1")
+        return -1
+    } else {
+        return k[key]
+    }
+}
+
+# Rads to degrees
+function rtod(r) {
+   return (r*(180.0/math.pi))
+}
+
+# Degrees to rads
+function dtor(d) {
+   return (math.pi*(d/180.0))
+}
+
+# Force angles in the (-180,180) interval
+function degrees_interval(a) {
+    var temp = a
+    while ((temp>360.0) or (temp<0.0)) {
+        if (temp > 360.0) {
+            temp = temp - 360.0
+        } else if (temp < 0.0){
+            temp = temp + 360.0
+        }
+    }
+    if (temp > 180.0) {
+        temp = temp - 360.0
+    }
+    return temp
+}
+
+# Force angles in the (-pi,pi) interval
+function radians_interval(a) {
+    var temp = a
+    while ((temp>2.0*math.pi) or (temp<0.0)) {
+        if (temp > 2.0*math.pi) {
+            temp = temp - 2.0*math.pi
+        } else if (temp < 0.0){
+            temp = temp + 2.0*math.pi
+        }
+    }
+    if (temp > math.pi) {
+        temp = temp - 2.0*math.pi
+    }
+    return temp
+}
+
+function inform_your_neighborhood() {    
+    # Reset to 0 the visibility of all neighbors
+    foreach(knowledge, function(key, value) {
+          column = string.sub(key, string.length(key)-1,string.length(key))
+          if (column=='3') { 
+              knowledge[key] = 0 
+          }     
+    })    
+    neighbors.foreach( function(rid, data) {               
+        # For each neighbor, send a message with its azimuth, as seen by the broadcasting robot
+        message_id = string.tostring(rid)
+        neighbors.broadcast(message_id, rtod(data.azimuth))        
+        # Record the neighbor azimuth in my own knowledge table
+        write_knowledge(knowledge, rid, 0, rtod(data.azimuth))        
+        # Record the neighbor distance in my own knowledge table
+        write_knowledge(knowledge, rid, 2, data.distance)        
+        # Set neighbor as visible
+        write_knowledge(knowledge, rid, 3, 1)     
+    })    
+    # Send a message with the desired direction, as seen by the broadcasting robot
+    neighbors.broadcast("direction", local_dir)
+    
+}
+
+function listen_to_your_neighborhood() {    
+    # For all "senders" in my neighborhood, record my azimuth, as seen by them
+    message_id = string.tostring(id)
+    neighbors.listen(message_id, function(vid, value, rid) {
+        write_knowledge(knowledge, rid, 1, value)
+    })    
+}
+
+function zero() {   
+  # Do not move
+  goto(0.0,0.0) 
+  # Tell the neighbors of the center where to go
+  inform_your_neighborhood()       
+}
+
+function onetwo() {
+  # Broadcast information
+  inform_your_neighborhood()   
+
+  interval = (read_knowledge(knowledge,0,0)) - (read_knowledge(knowledge,0,1) + 180)
+  interval = degrees_interval(interval)
+  debug(interval)
+  if(interval < 5 and interval > (-5)) {
+    goto(0.0,0.0)
+    debug("aligned")
+  } else {
+      x_mov = math.cos(60)
+      y_mov = math.sin(60)
+      goto(x_mov,y_mov)
+  }
+}
+
+
+# Executed at init time
+function init() { 
+  # Local knowledge table
+  knowledge = {}
+  # Update local knowledge with information from the neighbors
+  listen_to_your_neighborhood()
+}
+
+# Executed every time step
+function step() {
+
+  if(id == 0) {
+    zero()
+
+  } else {
+    onetwo()
+  }
+}
+
+# Executed once when the robot (or the simulator) is reset.
+function reset() {
+}
+# Execute at exit
+function destroy() {
+}
