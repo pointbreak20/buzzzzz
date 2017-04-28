@@ -42,22 +42,6 @@ function degrees_interval(a) {
     return temp
 }
 
-# Force angles in the (-pi,pi) interval
-function radians_interval(a) {
-    var temp = a
-    while ((temp>2.0*math.pi) or (temp<0.0)) {
-        if (temp > 2.0*math.pi) {
-            temp = temp - 2.0*math.pi
-        } else if (temp < 0.0){
-            temp = temp + 2.0*math.pi
-        }
-    }
-    if (temp > math.pi) {
-        temp = temp - 2.0*math.pi
-    }
-    return temp
-}
-
 function inform_your_neighborhood() {    
     # Reset to 0 the visibility of all neighbors
     foreach(knowledge, function(key, value) {
@@ -71,9 +55,7 @@ function inform_your_neighborhood() {
         message_id = string.tostring(rid)
         neighbors.broadcast(message_id, rtod(data.azimuth))        
         # Record the neighbor azimuth in my own knowledge table
-        write_knowledge(knowledge, rid, 0, rtod(data.azimuth))        
-        # Record the neighbor distance in my own knowledge table
-        write_knowledge(knowledge, rid, 2, data.distance)        
+        write_knowledge(knowledge, rid, 0, rtod(data.azimuth))              
         # Set neighbor as visible
         write_knowledge(knowledge, rid, 3, 1)     
     })    
@@ -97,7 +79,7 @@ function zero() {
   inform_your_neighborhood()       
 }
 
-function onetwo() {
+function rotate() {
   # Broadcast information
   inform_your_neighborhood()   
 
@@ -125,12 +107,10 @@ function init() {
 
 # Executed every time step
 function step() {
-
   if(id == 0) {
     zero()
-
   } else {
-    onetwo()
+    rotate()
   }
 }
 
