@@ -200,7 +200,6 @@ function barrier_ready() {
 # Executes the barrier
 #
 function barrier_wait(threshold, transf) {
-log("barrier wait",id)
   debug("barrier wait: ", barrier.size())
   inform_your_neighborhood()
   barrier.get(id)
