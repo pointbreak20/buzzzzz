@@ -1,5 +1,7 @@
+
 include "include/vec2.bzz"
-# Write a table as if it was a matrix
+include "include/string.bzz"
+
 function write_knowledge(k, row, col, val) {
     var key = string.concat(string.tostring(row),"-",string.tostring(col))
     k[key] = val
@@ -9,11 +11,81 @@ function write_knowledge(k, row, col, val) {
 function read_knowledge(k, row, col) {
     var key = string.concat(string.tostring(row),"-",string.tostring(col))
     if (k[key] == nil) {
-        log("Warning: reading 'nil' value from the knowledge table, returning -1")
+        # log("Warning: reading 'nil' value from the knowledge table, returning -1")
         return -1
     } else {
         return k[key]
     }
+}
+
+# Int to String 
+function itos(i) {
+    
+    log("Use 'string.tostring(OJB)' instead")
+    
+    if (i==0) { return "0" }
+    if (i==1) { return "1" }
+    if (i==2) { return "2" }
+    if (i==3) { return "3" }
+    if (i==4) { return "4" }
+    if (i==5) { return "5" }
+    if (i==6) { return "6" }
+    if (i==7) { return "7" }
+    if (i==8) { return "8" }
+    if (i==9) { return "9" }
+    
+    log("Function 'itos' out of bounds, returning the answer (42)")
+    return "42"
+}
+
+# String to Int
+function stoi(s) {
+   if (s=='0') { return 0 }
+   if (s=='1') { return 1 }
+   if (s=='2') { return 2 }
+   if (s=='3') { return 3 }
+   if (s=='4') { return 4 }
+   if (s=='5') { return 5 }
+   if (s=='6') { return 6 }
+   if (s=='7') { return 7 }
+   if (s=='8') { return 8 }
+   if (s=='9') { return 9 }
+   
+   log("Function 'stoi' out of bounds, returning the answer (42)")
+   return 42
+   
+}
+
+
+function inform_your_neighborhood() {    
+    # Reset to 0 the visibility of all neighbors
+    foreach(knowledge, function(key, value) {
+          column = string.sub(key, string.length(key)-1,string.length(key))
+          if (column=='3') { 
+              knowledge[key] = 0 
+          }     
+    })    
+    neighbors.foreach( function(rid, data) {               
+        # For each neighbor, send a message with its azimuth, as seen by the broadcasting robot
+        message_id = string.tostring(rid)
+        neighbors.broadcast(message_id, rtod(data.azimuth))        
+        # Record the neighbor azimuth in my own knowledge table
+        write_knowledge(knowledge, rid, 0, rtod(data.azimuth))        
+        # Record the neighbor distance in my own knowledge table
+        write_knowledge(knowledge, rid, 2, data.distance)        
+        # Set neighbor as visible    
+    })    
+    # Send a message with the desired direction, as seen by the broadcasting robot
+    neighbors.broadcast("direction", local_dir)
+    
+}
+
+function listen_to_your_neighborhood() {    
+    # For all "senders" in my neighborhood, record my azimuth, as seen by them
+    message_id = string.tostring(id)
+    neighbors.listen(message_id, function(vid, value, rid) {
+        write_knowledge(knowledge, rid, 1, value)
+    })
 }
 
 # Rads to degrees
@@ -42,58 +114,55 @@ function degrees_interval(a) {
     return temp
 }
 
-function inform_your_neighborhood() {    
-    # Reset to 0 the visibility of all neighbors
-    foreach(knowledge, function(key, value) {
-          column = string.sub(key, string.length(key)-1,string.length(key))
-          if (column=='3') { 
-              knowledge[key] = 0 
-          }     
-    })    
-    neighbors.foreach( function(rid, data) {               
-        # For each neighbor, send a message with its azimuth, as seen by the broadcasting robot
-        message_id = string.tostring(rid)
-        neighbors.broadcast(message_id, rtod(data.azimuth))        
-        # Record the neighbor azimuth in my own knowledge table
-        write_knowledge(knowledge, rid, 0, rtod(data.azimuth))              
-        # Set neighbor as visible
-        write_knowledge(knowledge, rid, 3, 1)     
-    })    
-    # Send a message with the desired direction, as seen by the broadcasting robot
-    neighbors.broadcast("direction", local_dir)
-    
+# Force angles in the (-pi,pi) interval
+function radians_interval(a) {
+    var temp = a
+    while ((temp>2.0*math.pi) or (temp<0.0)) {
+        if (temp > 2.0*math.pi) {
+            temp = temp - 2.0*math.pi
+        } else if (temp < 0.0){
+            temp = temp + 2.0*math.pi
+        }
+    }
+    if (temp > math.pi) {
+        temp = temp - 2.0*math.pi
+    }
+    return temp
 }
 
-function listen_to_your_neighborhood() {    
-    # For all "senders" in my neighborhood, record my azimuth, as seen by them
-    message_id = string.tostring(id)
-    neighbors.listen(message_id, function(vid, value, rid) {
-        write_knowledge(knowledge, rid, 1, value)
-    })    
-}
 
 function zero() {   
   # Do not move
   goto(0.0,0.0) 
   # Tell the neighbors of the center where to go
-  inform_your_neighborhood()       
+  inform_your_neighborhood()      
 }
 
 function rotate() {
   # Broadcast information
-  inform_your_neighborhood()   
+  inform_your_neighborhood()
+  write_knowledge(knowledge, 0, 4, 1)
+  neighbors.foreach( function(rid, data) {
+    # log(id, " ", rid, " ", read_knowledge(knowledge, rid, 3))
+    if(read_knowledge(knowledge, rid, 4) == 1)
+    interval = (read_knowledge(knowledge,rid,0)) - (read_knowledge(knowledge,rid,1) + 180)
+    interval = degrees_interval(interval)
+    debug(interval)
+    if(interval < 5 and interval > (-5)) {
+      goto(0.0,0.0)
+      write_knowledge(knowledge, id, 4, 1)
+      statef = nextState
+    } else {
+        x_mov = math.cos(60)
+        y_mov = math.sin(60)
+        goto(x_mov,y_mov)
+    }
+  })
 
-  interval = (read_knowledge(knowledge,0,0)) - (read_knowledge(knowledge,0,1) + 180)
-  interval = degrees_interval(interval)
-  debug(interval)
-  if(interval < 5 and interval > (-5)) {
-    goto(0.0,0.0)
-    debug("aligned")
-  } else {
-      x_mov = math.cos(60)
-      y_mov = math.sin(60)
-      goto(x_mov,y_mov)
-  }
+}
+
+function nextState() {
+  debug("aligned ", read_knowledge(knowledge, id, 4))
 }
 
 
@@ -101,6 +170,7 @@ function rotate() {
 function init() { 
   # Local knowledge table
   knowledge = {}
+  statef = rotate
   # Update local knowledge with information from the neighbors
   listen_to_your_neighborhood()
 }
@@ -110,7 +180,7 @@ function step() {
   if(id == 0) {
     zero()
   } else {
-    rotate()
+    statef()
   }
 }
 
@@ -120,3 +190,15 @@ function reset() {
 # Execute at exit
 function destroy() {
 }
+
+
+
+
+
+
+
+
+
+
+
+

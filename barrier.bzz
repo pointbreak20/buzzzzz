@@ -1,4 +1,5 @@
 BARRIER_VSTIG = 101
+ROBOTS = 6
 
 function barrier_set(threshold, transf) {
   statef = function() {
@@ -28,8 +29,8 @@ function rgb_red() {
 function iterate() {
   iteration = iteration + 1
   debug(iteration)
-  if(iteration % 10 == 0) {
-    barrier_set(5, rgb_red)
+  if(iteration % 30 == 0) {
+    barrier_set(ROBOTS, rgb_red)
     barrier_ready()
   }
 }
