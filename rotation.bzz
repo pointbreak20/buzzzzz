@@ -1,7 +1,10 @@
-
 include "include/vec2.bzz"
 include "include/string.bzz"
+#################################################
+### UTILITY FUNCTIONS ###########################
+#################################################
 
+# Write a table as if it was a matrix
 function write_knowledge(k, row, col, val) {
     var key = string.concat(string.tostring(row),"-",string.tostring(col))
     k[key] = val
@@ -56,6 +59,36 @@ function stoi(s) {
    
 }
 
+#################################################
+### MOVEMENT/COMMUNICATION PRIMITIVES ###########
+#################################################
+
+# Lennard-Jones parameters
+TARGET     = 250.0 # The equilibrium distance, in cm
+EPSILON    = 150.0
+# Lennard-Jones interaction magnitude
+function lj_magnitude(dist, target, epsilon) {
+  return -(epsilon / dist) * ((target / dist)^4 - (target / dist)^2)
+}
+# Neighbor data to LJ interaction vector
+function lj_vector(rid, data) {
+  return math.vec2.newp(lj_magnitude(data.distance, TARGET, EPSILON), data.azimuth)
+}
+# Accumulator of neighbor LJ interactions
+function lj_sum(rid, data, accum) {
+  return math.vec2.add(data, accum)
+}
+
+# Calculates and actuates the flocking interaction
+function hexagon() {
+  # Calculate accumulator
+  debug("hex")
+  var accum = neighbors.map(lj_vector).reduce(lj_sum, math.vec2.new(0.0, 0.0))
+  if(neighbors.count() > 0)
+    math.vec2.scale(accum, 1.0 / neighbors.count())
+  # Move according to vector
+  goto(accum.x, accum.y)
+}
 
 function inform_your_neighborhood() {    
     # Reset to 0 the visibility of all neighbors
@@ -73,7 +106,8 @@ function inform_your_neighborhood() {
         write_knowledge(knowledge, rid, 0, rtod(data.azimuth))        
         # Record the neighbor distance in my own knowledge table
         write_knowledge(knowledge, rid, 2, data.distance)        
-        # Set neighbor as visible    
+        # Set neighbor as visible
+        write_knowledge(knowledge, rid, 3, 1)     
     })    
     # Send a message with the desired direction, as seen by the broadcasting robot
     neighbors.broadcast("direction", local_dir)
@@ -141,11 +175,8 @@ function zero() {
 function rotate() {
   # Broadcast information
   inform_your_neighborhood()
-  write_knowledge(knowledge, 0, 4, 1)
-  neighbors.foreach( function(rid, data) {
-    # log(id, " ", rid, " ", read_knowledge(knowledge, rid, 3))
-    if(read_knowledge(knowledge, rid, 4) == 1)
-    interval = (read_knowledge(knowledge,rid,0)) - (read_knowledge(knowledge,rid,1) + 180)
+  if(read_knowledge(knowledge,0,3) == 1) {
+    interval = (read_knowledge(knowledge,0,0)) - (read_knowledge(knowledge,0,1) + 180)
     interval = degrees_interval(interval)
     debug(interval)
     if(interval < 5 and interval > (-5)) {
@@ -157,8 +188,37 @@ function rotate() {
         y_mov = math.sin(60)
         goto(x_mov,y_mov)
     }
-  })
+  } else {
+    statef = rotate2
 
+
+  }
+  # write_knowledge(knowledge, 0, 4, 1)
+  # neighbors.foreach( function(rid, data) {
+  #   # log(id, " ", rid, " ", read_knowledge(knowledge, rid, 3))
+  #   if(read_knowledge(knowledge, rid, 4) == 1)
+  #   interval = (read_knowledge(knowledge,rid,0)) - (read_knowledge(knowledge,rid,1) + 180)
+  #   interval = degrees_interval(interval)
+  #   debug(interval)
+  #   if(interval < 5 and interval > (-5)) {
+  #     goto(0.0,0.0)
+  #     write_knowledge(knowledge, id, 4, 1)
+  #     statef = nextState
+  #   } else {
+  #       x_mov = math.cos(60)
+  #       y_mov = math.sin(60)
+  #       goto(x_mov,y_mov)
+  #   }
+  # })
+
+
+
+}
+
+function rotate2() {
+  
+
+  log(read_knowledge(knowledge, 6,4))
 }
 
 function nextState() {
