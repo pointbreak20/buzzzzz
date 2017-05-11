@@ -35,9 +35,7 @@ function iterate() {
   }
 }
 
-#
 function init() {
-  # Set initial state
   barrier = stigmergy.create(BARRIER_VSTIG)
   rng.setseed(id)
   iteration = rng.uniform(1,100)
@@ -45,15 +43,9 @@ function init() {
 
 }
 
-#
-# Executed at each time step
-#
 function step() {
   statef()
 }
 
-#
-# Executed at the experiment end
-#
 function destroy() {
 }
