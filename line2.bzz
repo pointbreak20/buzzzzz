@@ -188,14 +188,6 @@ function rotating_line() {
         }
     })
     
-    #neighbors.foreach(
-    #  function(rid, data) {
-    #    if (rid==0) {
-    #        desired_id = rid
-    #        desired_azimuth = neighbors.get(rid).azimuth
-    #    }
-    #})
-    
     log(id, " ", rtod(desired_azimuth), " from robot ", desired_id, " mydist being ", mydist)
     
     speed_factor = 0.5*(mydist/100)
@@ -207,39 +199,23 @@ function rotating_line() {
             goto(0.0,10.0)  
         } else {
             goto(-speed_factor*(1.0-correction)*math.sin(desired_azimuth),speed_factor*(1.0+correction)*math.cos(desired_azimuth))
-        }
-    #}
-
-    
-        
-        
+        }        
 }
 
-#
-# Constants
-#
+
 BARRIER_VSTIG = 101
-ROBOTS = 3
+ROBOTS = 4
 
 NUM_ROBOTS = 5
 
-#
-# Sets a barrier
-#
 function barrier_set(threshold, transf) {
   # #debug("barrier set")
   
   barrier = stigmergy.create(BARRIER_VSTIG)
   statef = function() {
     barrier_wait(threshold, transf)
-  }
-  # log("barrier created")
-  
 }
 
-#
-# Make yourself ready
-#
 function barrier_ready() {
 
   barrier.put(id, 1)
@@ -330,12 +306,6 @@ function transition_hex() {
 				}
 			}
 		})
-}
-
-
-function hi() {
-	
-	 #debug("Next state")
 }
 
 function alignNearestBot(bot, angle) {

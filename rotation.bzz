@@ -164,12 +164,12 @@ function radians_interval(a) {
     return temp
 }
 
-
 function zero() {   
   # Do not move
   goto(0.0,0.0) 
   # Tell the neighbors of the center where to go
-  inform_your_neighborhood()      
+  inform_your_neighborhood()
+  neighbors.broadcast("dist_to_source", mydist)      
 }
 
 function rotate() {
@@ -181,7 +181,6 @@ function rotate() {
     debug(interval)
     if(interval < 5 and interval > (-5)) {
       goto(0.0,0.0)
-      write_knowledge(knowledge, id, 4, 1)
       statef = nextState
     } else {
         x_mov = math.cos(60)
@@ -189,48 +188,68 @@ function rotate() {
         goto(x_mov,y_mov)
     }
   } else {
-    statef = rotate2
-
-
+    statef = rotateNeighbors
   }
-  # write_knowledge(knowledge, 0, 4, 1)
-  # neighbors.foreach( function(rid, data) {
-  #   # log(id, " ", rid, " ", read_knowledge(knowledge, rid, 3))
-  #   if(read_knowledge(knowledge, rid, 4) == 1)
-  #   interval = (read_knowledge(knowledge,rid,0)) - (read_knowledge(knowledge,rid,1) + 180)
-  #   interval = degrees_interval(interval)
-  #   debug(interval)
-  #   if(interval < 5 and interval > (-5)) {
-  #     goto(0.0,0.0)
-  #     write_knowledge(knowledge, id, 4, 1)
-  #     statef = nextState
-  #   } else {
-  #       x_mov = math.cos(60)
-  #       y_mov = math.sin(60)
-  #       goto(x_mov,y_mov)
-  #   }
-  # })
-
-
-
 }
 
-function rotate2() {
-  
-
-  log(read_knowledge(knowledge, 6,4))
+function rotateNeighbors() {
+    temp_dist = 0
+    desired_azimuth = 0
+    neighbors.foreach( function(rid, data) {
+      #log("robot ", rid, ": azimuth   = ", data.azimuth) 
+      #if (neighbors.get(rid).distance < temp_dist) {
+      if ((read_knowledge(knowledge, rid, 9)<mydist) and (read_knowledge(knowledge, rid, 9) >= temp_dist)) {
+        #temp_dist = neighbors.get(rid).distance
+        temp_dist = read_knowledge(knowledge, rid, 9)
+        desired_id = rid
+      }
+    }) 
+    
+    inform_your_neighborhood()
+    interval = (read_knowledge(knowledge,desired_id,0)) - (read_knowledge(knowledge,desired_id,1) + 180)
+    interval = degrees_interval(interval)
+    debug(interval)
+    if(interval < 5 and interval > (-5)) {
+      goto(0.0,0.0)
+      statef = nextState
+    } else {
+        x_mov = math.cos(60)
+        y_mov = math.sin(60)
+        goto(x_mov,y_mov)
+    }
 }
 
 function nextState() {
-  debug("aligned ", read_knowledge(knowledge, id, 4))
+  neighbors.broadcast("dist_to_source", mydist)
+  debug("aligned")
 }
 
+function dists() {
+  if(id == 0) {
+      # Source robot
+      mydist = 0.
+    }
+    else {
+      # Other robots
+      mydist = 1000
+      # Listen to other robots' distances
+      neighbors.listen("dist_to_source",
+        function(value_id, value, robot_id) {
+          write_knowledge(knowledge, robot_id, 9, value) 
+          mydist = math.min( mydist, neighbors.get(robot_id).distance + value)
+            if (robot_id==0) {
+                mydist = neighbors.get(robot_id).distance
+            }
+        })
+    }
+}
 
 # Executed at init time
 function init() { 
   # Local knowledge table
   knowledge = {}
   statef = rotate
+  dists()
   # Update local knowledge with information from the neighbors
   listen_to_your_neighborhood()
 }
