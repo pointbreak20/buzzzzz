@@ -5,7 +5,6 @@ function barrier_set(threshold, transf) {
   statef = function() {
     barrier_wait(threshold, transf);
   }
-
 }
 
 function barrier_ready() {
@@ -43,10 +42,6 @@ function init() {
   rng.setseed(id)
   iteration = rng.uniform(1,100)
   statef = iterate
-
-
-
-
 }
 
 function step() {
