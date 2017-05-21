@@ -59,37 +59,6 @@ function stoi(s) {
    
 }
 
-#################################################
-### MOVEMENT/COMMUNICATION PRIMITIVES ###########
-#################################################
-
-# Lennard-Jones parameters
-TARGET     = 250.0 # The equilibrium distance, in cm
-EPSILON    = 150.0
-# Lennard-Jones interaction magnitude
-function lj_magnitude(dist, target, epsilon) {
-  return -(epsilon / dist) * ((target / dist)^4 - (target / dist)^2)
-}
-# Neighbor data to LJ interaction vector
-function lj_vector(rid, data) {
-  return math.vec2.newp(lj_magnitude(data.distance, TARGET, EPSILON), data.azimuth)
-}
-# Accumulator of neighbor LJ interactions
-function lj_sum(rid, data, accum) {
-  return math.vec2.add(data, accum)
-}
-
-# Calculates and actuates the flocking interaction
-function hexagon() {
-  # Calculate accumulator
-  debug("hex")
-  var accum = neighbors.map(lj_vector).reduce(lj_sum, math.vec2.new(0.0, 0.0))
-  if(neighbors.count() > 0)
-    math.vec2.scale(accum, 1.0 / neighbors.count())
-  # Move according to vector
-  goto(accum.x, accum.y)
-}
-
 function inform_your_neighborhood() {    
     # Reset to 0 the visibility of all neighbors
     foreach(knowledge, function(key, value) {
@@ -108,10 +77,7 @@ function inform_your_neighborhood() {
         write_knowledge(knowledge, rid, 2, data.distance)        
         # Set neighbor as visible
         write_knowledge(knowledge, rid, 3, 1)     
-    })    
-    # Send a message with the desired direction, as seen by the broadcasting robot
-    neighbors.broadcast("direction", local_dir)
-    
+    })       
 }
 
 function listen_to_your_neighborhood() {    
@@ -164,24 +130,13 @@ function radians_interval(a) {
     return temp
 }
 
-########################################
-#
-# BARRIER-RELATED FUNCTIONS
-#
-########################################
-
-#
-# Constants
-#
 BARRIER_VSTIG = 101
 ROBOTS = 3
 
-#
-# Sets a barrier
-#
+
 function barrier_set(threshold, transf) {
   # debug("barrier set")
-  barrier = stigmergy.create(BARRIER_VSTIG)
+  # barrier = stigmergy.create(BARRIER_VSTIG)
   statef = function() {
     barrier_wait(threshold, transf)
   }
@@ -189,21 +144,18 @@ function barrier_set(threshold, transf) {
   
 }
 
-#
-# Make yourself ready
-#
 function barrier_ready() {
   barrier.put(id, 1)
 }
 
-#
-# Executes the barrier
-#
 function barrier_wait(threshold, transf) {
   debug("barrier wait: ", barrier.size())
   inform_your_neighborhood()
   barrier.get(id)
-  
+  # xmov = math.cos(60)
+  # ymov = math.sin(60)
+  # goto(xmov,ymov)
+
   if(barrier.size() >= threshold) {
 
     barrier = nil
@@ -217,61 +169,39 @@ function rotate() {
 	statef = transition_hex
 }
 
-function pivot() {
-	foreach(t, function(key, value){
-			if(t[key] == id) {
-				previous = stoi(t[key-1])
-				interval = degrees_interval(read_knowledge(knowledge, previous, 0) - 80)
-				if (interval<4 and interval>(-4)) {
-					goto(0.0,0.0)
-					debug("pivot")
-				}
-				else {
-					# Figure out how to get the speed up 
-					speed = 100
-					# x_mov = math.cos(60)
-				 	# y_mov = math.sin(60)
-				 	goto(speed*x_mov,speed*y_mov)
-
-				}
-			}
-		})
-}
-
 function transition_hex() {
-	log("trans hex",id)
-	inform_your_neighborhood()
-	foreach(t, function(key, value){
-			if(t[key] == id) {
-				previous = stoi(t[key-1])
-				interval = degrees_interval(read_knowledge(knowledge, previous, 0) - 180)
-				debug(read_knowledge(knowledge, previous, 0))
-				if (interval<5 and interval>(-5)) {
-					goto(0.0,0.0)
-					# neighbors.broadcast("dist_to_source", mydist)
-					debug("aligned:")
-					# 
-					# barrier_set(ROBOTS, hi)
-     #  	  			barrier_ready()
-				}
-				else {
-		
-					x_mov = math.cos(60)
-				 	y_mov = math.sin(60)
-				 	goto(x_mov,y_mov)
-				}
-			}
-		})
-}
+	# debug("aligned")
+      temp_dist = 0
+    desired_azimuth = 0
+    neighbors.foreach(
+      function(rid, data) {
+        #log("robot ", rid, ": azimuth   = ", data.azimuth) 
+        #if (neighbors.get(rid).distance < temp_dist) {
+        if ((read_knowledge(knowledge, rid, 9)<mydist) and (read_knowledge(knowledge, rid, 9) >= temp_dist)) {
+            #temp_dist = neighbors.get(rid).distance
+            temp_dist = read_knowledge(knowledge, rid, 9)
+            desired_id = rid
+            desired_azimuth = neighbors.get(rid).azimuth
+        }
+    })
+    
+    log(id, " ", rtod(desired_azimuth), " from robot ", desired_id, " mydist being ", mydist)
+    
+    speed_factor = 0.5*(mydist/100)
+    correction = 0.0
+    #if (id == 3) {
+        if (math.abs(rtod(desired_azimuth))>95) {
+            goto(0.0,-10.0)
+        } else if (math.abs(rtod(desired_azimuth))<85) {
+            goto(0.0,10.0)  
+        } else {
+            goto(-speed_factor*(1.0-correction)*math.sin(desired_azimuth),speed_factor*(1.0+correction)*math.cos(desired_azimuth))
+        }   
 
-
-function hi() {
-	
-	 debug("Next state")
 }
 
 function alignNearestBot(bot, angle) {
-    log("align nearest bot :",id)
+  log("align nearest bot :",id , bot)
 	arm_offset = degrees_interval(read_knowledge(knowledge, bot, 1) - angle)
       
       if (arm_offset<1 and arm_offset>(-1)) {
@@ -316,25 +246,6 @@ function alignNearestBot(bot, angle) {
   }
 
 
-function tableMin(t) {
-		mini = 999
-		robot = 0
-	foreach(t, function(key, value){
-			if(t[key] < mini) {
-				mini = value
-				robot = key
-			}
-		})
-	return robot
-}
-
-function testing() {
-		inform_your_neighborhood()
-		goto(6.0,20.0)
-
-}
-
-
 #################################################
 ### ACTUAL CONTROLLERS ##########################
 #################################################
@@ -354,22 +265,26 @@ function onetwo() {
   }         
 }
 
-
 function dists() {
-	if(id == 0) {
-    	# Source robot
-   		mydist = 0.
-  	}
-  	else {
-    	# Other robots
-	    mydist = 1000
-	    # Listen to other robots' distances
-	    neighbors.listen("dist_to_source",
-	      function(value_id, value, robot_id) {
-	        mydist = math.min( mydist, neighbors.get(robot_id).distance + value)
-	      })
-  	}
+  if(id == 0) {
+      # Source robot
+      mydist = 0.
+    }
+    else {
+      # Other robots
+      mydist = 1000
+      # Listen to other robots' distances
+      neighbors.listen("dist_to_source",
+        function(value_id, value, robot_id) {
+            write_knowledge(knowledge, robot_id, 9, value) 
+          mydist = math.min( mydist, neighbors.get(robot_id).distance + value)
+            if (robot_id==0) {
+                mydist = neighbors.get(robot_id).distance
+            }
+        })
+    }
 }
+
 
 #################################################
 ### BUZZ FUNCTIONS ##############################
@@ -387,11 +302,11 @@ function init() {
   t ={}
   # Virtual Stigmergy
   vs = stigmergy.create(2)
-  # barrier = stigmergy.create(BARRIER_VSTIG)
+  barrier = stigmergy.create(BARRIER_VSTIG)
   
   iden = 0
   vs_value = 0
-  angle = 90
+  angle = 270
   posit = "0"
   
   vs.put("a", vs_value) # ID for the next bot to follow
@@ -402,14 +317,21 @@ function init() {
   
   # Update local knowledge with information from the neighbors
   listen_to_your_neighborhood()
-  # dists()
-
+  dists()
+  iteration_counter = 0
   # Variables initialization
   statef = onetwo
 }
 
 # Executed every time step
 function step() {
+
+  neighbors.broadcast("dist_to_source", mydist)
+  iteration_counter = iteration_counter+1
+  if (iteration_counter%20 == 0) {
+      dists()
+  }
+
   s0.exec(zero)
   # o.exec(onetwo)
   s1.exec(statef)

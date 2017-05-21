@@ -25,73 +25,49 @@
     -->
     <experiment length="0"
                 ticks_per_second="10"
-                random_seed="152" />
+                random_seed="122" />
   </framework>
 
   <!-- *************** -->
   <!-- * Controllers * -->
   <!-- *************** -->
   <controllers>
-	    <buzz_controller_footbot id="fdc">
-	      <actuators>
-	        <differential_steering implementation="default" />
-	        <leds                  implementation="default" medium="leds" />
-	        <range_and_bearing implementation="default" />
-	      </actuators>
-		  
-	      <sensors>
-	        <range_and_bearing implementation="medium" medium="rab" show_rays="false" noise_std_dev="0" packet_drop_prob="0"/>
-	      </sensors>
-		  
-	      <params bytecode_file="line.bo" debug_file="line.bdb" >
-	       <wheel_turning hard_turn_angle_threshold="90"
-	       					soft_turn_angle_threshold="70"
-	       					no_turn_threshold="10"
-	       					max_speed="0" />
-	      </params>
-	    </buzz_controller_footbot>
-<!-- 
-
-    <buzz_controller_spiri id="bcs">
-      <actuators>
-        <quadrotor_position implementation="default" />
-        <range_and_bearing  implementation="default" />
-      </actuators>
-      <sensors>
-        <range_and_bearing               implementation="medium" medium="rab" show_rays="false" />
-        <colored_blob_perspective_camera implementation="default" medium="leds" show_rays="false" />
-        <positioning                     implementation="default" />
-      </sensors>
-      <params bytecode_file="dispersion_spiri.bo"
-              debug_file="dispersion_spiri.bdb" />
-    </buzz_controller_spiri> -->
+      <buzz_controller_footbot id="fdc">
+      
+        <actuators>
+          <differential_steering implementation="default" />
+          <leds                  implementation="default" medium="leds" />
+          <range_and_bearing implementation="default" />
+        </actuators>
+      
+        <sensors>
+          <range_and_bearing implementation="medium" medium="rab" show_rays="false" noise_std_dev="0" packet_drop_prob="0"/>
+        </sensors>
+      
+        <params bytecode_file="line2.bo" debug_file="line2.bdb" >
+         <wheel_turning hard_turn_angle_threshold="90"
+                  soft_turn_angle_threshold="70"
+                  no_turn_threshold="10"
+                  max_speed="50" />
+        </params>
+    
+      </buzz_controller_footbot>
 
 
   </controllers>
-  <arena size="30, 30, 4" center="0,0,2">
-	  
+  <arena size="50, 50, 1" center="0,0,0.5">
+    
 
     <distribute>
-      <position method="uniform" min="-3,-3,0" max="3,3,0" />
+      <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="9" max_trials="100" base_num="0">
+      <entity quantity="5" max_trials="100" base_num="0">
         <foot-bot id="fb" rab_data_size="500" rab_range="30">
           <controller config="fdc" />
         </foot-bot>
       </entity>
     </distribute>
 
-<!-- 
-    <distribute>
-      <position method="uniform" min="-2,-2,0" max="2,2,0" />
-      <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="15" max_trials="100" base_num="15">
-        <spiri id="sp" rab_range="10" rab_data_size="500" camera_range="5">
-          <controller config="bcs" />
-        </spiri>
-      </entity>
-    </distribute>
- -->
   </arena>
 
  
@@ -99,23 +75,22 @@
     <!--
         Use a 2D dynamics engine.
     -->
-     <pointmass3d id="pm3d" />
     <dynamics2d id="dyn2d" />
   </physics_engines>
 
   <media>
-	 <range_and_bearing id="rab" />
-	 <led id="leds" />
+   <range_and_bearing id="rab" />
+   <led id="leds" />
   </media>
   <visualization>  
-	<qt-opengl>
-		
+  <qt-opengl>
+    
         <camera>
           <placement idx="0" position="-3.81904,0.306014,10.4364" look_at="-3.49366,0.212449,9.49544" lens_focal_length="20" />
           <placement idx="1" position="-1.40203,0,3.23277" look_at="-1.08235,0,2.28525" lens_focal_length="20" />
         </camera>
-		
-		<user_functions label="buzz_qt" />
+    
+    <user_functions label="buzz_qt" />
     </qt-opengl>
   </visualization>
 
