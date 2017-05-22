@@ -131,7 +131,7 @@ function radians_interval(a) {
 }
 
 BARRIER_VSTIG = 101
-ROBOTS = 3
+ROBOTS = 5
 
 
 function barrier_set(threshold, transf) {
@@ -149,7 +149,7 @@ function barrier_ready() {
 }
 
 function barrier_wait(threshold, transf) {
-  debug("barrier wait: ", barrier.size())
+  # debug("barrier wait: ", barrier.size())
   inform_your_neighborhood()
   barrier.get(id)
   # xmov = math.cos(60)
@@ -166,7 +166,7 @@ function barrier_wait(threshold, transf) {
 
 function rotate() {
 	
-	statef = transition_hex
+	statef = zero
 }
 
 function transition_hex() {
@@ -223,10 +223,10 @@ function alignNearestBot(bot, angle) {
           # local_rotation = degrees_interval( read_knowledge(knowledge, 0, 1) + (180.0 - read_knowledge(knowledge, 0, 0)) )
           # local_arm = degrees_interval(angle - local_rotation)
 
-          if (read_knowledge(knowledge, bot, 2) > 150.0) { 
+          if (read_knowledge(knowledge, bot, 2) > 120.0) { 
               x_mov = math.cos(dtor(read_knowledge(knowledge, bot, 0)))
               y_mov = math.sin(dtor(read_knowledge(knowledge, bot, 0)))       
-          } else if (read_knowledge(knowledge, bot, 2) < 30.0) {
+          } else if (read_knowledge(knowledge, bot, 2) < 20.0) {
               x_mov = -math.cos(dtor(read_knowledge(knowledge, bot, 0)))
               y_mov = -math.sin(dtor(read_knowledge(knowledge, bot, 0)))              
           } else {
@@ -325,13 +325,6 @@ function init() {
 
 # Executed every time step
 function step() {
-
-  neighbors.broadcast("dist_to_source", mydist)
-  iteration_counter = iteration_counter+1
-  if (iteration_counter%20 == 0) {
-      dists()
-  }
-
   s0.exec(zero)
   # o.exec(onetwo)
   s1.exec(statef)
