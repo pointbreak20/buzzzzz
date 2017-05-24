@@ -1,8 +1,5 @@
 include "include/vec2.bzz"
 include "include/string.bzz"
-#################################################
-### UTILITY FUNCTIONS ###########################
-#################################################
 
 # Write a table as if it was a matrix
 function write_knowledge(k, row, col, val) {
@@ -131,7 +128,7 @@ function radians_interval(a) {
 }
 
 BARRIER_VSTIG = 101
-ROBOTS = 5
+ROBOTS = 5 # n-1 robots (Excluding source)
 
 
 function barrier_set(threshold, transf) {
@@ -149,140 +146,77 @@ function barrier_ready() {
 }
 
 function barrier_wait(threshold, transf) {
-  # debug("barrier wait: ", barrier.size())
   inform_your_neighborhood()
   barrier.get(id)
-  # xmov = math.cos(60)
-  # ymov = math.sin(60)
-  # goto(xmov,ymov)
-
   if(barrier.size() >= threshold) {
 
     barrier = nil
-    t = string.split(vs.get("d"),",")
     transf()
   }
 }
 
 function rotate() {
-	
+	# Change state to zero
 	statef = zero
-}
-
-function transition_hex() {
-	# debug("aligned")
-      temp_dist = 0
-    desired_azimuth = 0
-    neighbors.foreach(
-      function(rid, data) {
-        #log("robot ", rid, ": azimuth   = ", data.azimuth) 
-        #if (neighbors.get(rid).distance < temp_dist) {
-        if ((read_knowledge(knowledge, rid, 9)<mydist) and (read_knowledge(knowledge, rid, 9) >= temp_dist)) {
-            #temp_dist = neighbors.get(rid).distance
-            temp_dist = read_knowledge(knowledge, rid, 9)
-            desired_id = rid
-            desired_azimuth = neighbors.get(rid).azimuth
-        }
-    })
-    
-    log(id, " ", rtod(desired_azimuth), " from robot ", desired_id, " mydist being ", mydist)
-    
-    speed_factor = 0.5*(mydist/100)
-    correction = 0.0
-    #if (id == 3) {
-        if (math.abs(rtod(desired_azimuth))>95) {
-            goto(0.0,-10.0)
-        } else if (math.abs(rtod(desired_azimuth))<85) {
-            goto(0.0,10.0)  
-        } else {
-            goto(-speed_factor*(1.0-correction)*math.sin(desired_azimuth),speed_factor*(1.0+correction)*math.cos(desired_azimuth))
-        }   
-
 }
 
 function alignNearestBot(bot, angle) {
   log("align nearest bot :",id , bot)
 	arm_offset = degrees_interval(read_knowledge(knowledge, bot, 1) - angle)
-      
-      if (arm_offset<1 and arm_offset>(-1)) {
-      	  next_angle = degrees_interval(read_knowledge(knowledge, bot, 0) + 180)
-      	  goto(0.0,0.0)
-      	  vs.put("a", id)
-      	  vs.put("b", next_angle)
+  if (arm_offset<1 and arm_offset>(-1)) {
+      #Calculate the next angle
+  	  next_angle = degrees_interval(read_knowledge(knowledge, bot, 0) + 180)
+  	  goto(0.0,0.0)
 
-      	  posit = vs.get("d")
-      	  posit = string.concat(posit,",")
-      	  posit = string.concat(posit,string.tostring(id))
-      	  vs.put("d", posit)
+      # Put ID and next calculated angle for the rest of the robots to follow
+  	  vs.put("a", id)
+  	  vs.put("b", next_angle)
 
-      	  write_knowledge(knowledge, id, 4, 1)
-      	  barrier_set(ROBOTS, rotate)
-      	  barrier_ready()
-	  
-      } else {      	 
-          # local_rotation = degrees_interval( read_knowledge(knowledge, 0, 1) + (180.0 - read_knowledge(knowledge, 0, 0)) )
-          # local_arm = degrees_interval(angle - local_rotation)
+      # Set robot as aligned
+  	  write_knowledge(knowledge, id, 4, 1)
 
-          if (read_knowledge(knowledge, bot, 2) > 120.0) { 
-              x_mov = math.cos(dtor(read_knowledge(knowledge, bot, 0)))
-              y_mov = math.sin(dtor(read_knowledge(knowledge, bot, 0)))       
-          } else if (read_knowledge(knowledge, bot, 2) < 20.0) {
-              x_mov = -math.cos(dtor(read_knowledge(knowledge, bot, 0)))
-              y_mov = -math.sin(dtor(read_knowledge(knowledge, bot, 0)))              
-          } else {
-              spiraling = 2.0+(id/10.0) # Fun stuff but be careful with this, it affects how a robots turns around a central node, use random number generation, eventually
-              if (arm_offset > 0) { # Clockwise
+      # Ready for the next state
+  	  barrier_set(ROBOTS, rotate)
+  	  barrier_ready()
 
-                  x_mov = -math.sin(dtor(read_knowledge(knowledge, bot, 0)))
-                  y_mov = math.cos(dtor(read_knowledge(knowledge, bot, 0))) * spiraling
-              } else { # Counterclockwise
-                  x_mov = math.sin(dtor(read_knowledge(knowledge, bot, 0)))
-                  y_mov = -math.cos(dtor(read_knowledge(knowledge, bot, 0))) * spiraling
-              }
-          }
-          speed = 100
-          goto(speed * x_mov,speed * y_mov)
-      }
+  } else {      	 
+    if (read_knowledge(knowledge, bot, 2) > 120.0) {  # Get closer if too far
+        x_mov = math.cos(dtor(read_knowledge(knowledge, bot, 0)))
+        y_mov = math.sin(dtor(read_knowledge(knowledge, bot, 0)))       
+    } else if (read_knowledge(knowledge, bot, 2) < 20.0) { # Get further if too near
+        x_mov = -math.cos(dtor(read_knowledge(knowledge, bot, 0)))
+        y_mov = -math.sin(dtor(read_knowledge(knowledge, bot, 0)))              
+    } else {
+        spiraling = 2.0+(id/10.0) # Fun stuff but be careful with this, it affects how a robots turns around a central node, use random number generation, eventually
+        if (arm_offset > 0) { # Clockwise
+
+            x_mov = -math.sin(dtor(read_knowledge(knowledge, bot, 0)))
+            y_mov = math.cos(dtor(read_knowledge(knowledge, bot, 0))) * spiraling
+        } else { # Counterclockwise
+            x_mov = math.sin(dtor(read_knowledge(knowledge, bot, 0)))
+            y_mov = -math.cos(dtor(read_knowledge(knowledge, bot, 0))) * spiraling
+        }
+    }
+    speed = 100
+    goto(speed * x_mov,speed * y_mov)
   }
+}
 
 
-#################################################
-### ACTUAL CONTROLLERS ##########################
-#################################################
-
+# Source robot
 function zero() {   
   # Do not move
   goto(0.0,0.0) 
   inform_your_neighborhood()       
 }
 
-
-function onetwo() {
+# Rest of the robots
+function lineUp() {
   # Broadcast information
   inform_your_neighborhood()
   if(read_knowledge(knowledge,id,4) != 1) {
   	alignNearestBot(vs.get("a"), vs.get("b")) 
   }         
-}
-
-function dists() {
-  if(id == 0) {
-      # Source robot
-      mydist = 0.
-    }
-    else {
-      # Other robots
-      mydist = 1000
-      # Listen to other robots' distances
-      neighbors.listen("dist_to_source",
-        function(value_id, value, robot_id) {
-            write_knowledge(knowledge, robot_id, 9, value) 
-          mydist = math.min( mydist, neighbors.get(robot_id).distance + value)
-            if (robot_id==0) {
-                mydist = neighbors.get(robot_id).distance
-            }
-        })
-    }
 }
 
 
@@ -299,7 +233,6 @@ function init() {
 
   # Local knowledge table
   knowledge = {}
-  t ={}
   # Virtual Stigmergy
   vs = stigmergy.create(2)
   barrier = stigmergy.create(BARRIER_VSTIG)
@@ -317,19 +250,16 @@ function init() {
   
   # Update local knowledge with information from the neighbors
   listen_to_your_neighborhood()
-  dists()
+  # dists()
   iteration_counter = 0
   # Variables initialization
-  statef = onetwo
+  statef = lineUp
 }
 
 # Executed every time step
 function step() {
   s0.exec(zero)
-  # o.exec(onetwo)
   s1.exec(statef)
-  
-  # debug(mydist)
 }
 
 # Executed once when the robot (or the simulator) is reset.

@@ -19,7 +19,7 @@ function init() {
 
 function step() {
   debug(mydist)
-
+  # Added color gradient from red (closest) to blue (furthest)
   if(mydist < 100) {
     setleds(255,0,0)
   }
@@ -54,6 +54,7 @@ function step() {
     setleds(0,0,255)
   }
 
+  # Set message to be passed every 3s
   if(iteration % 30 == 0) {
     neighbors.broadcast("dist_to_source", mydist)
   }
