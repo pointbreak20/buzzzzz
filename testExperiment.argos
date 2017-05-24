@@ -41,7 +41,7 @@
         </actuators>
       
         <sensors>
-          <range_and_bearing implementation="medium" medium="rab" show_rays="false" noise_std_dev="0" packet_drop_prob="0"/>
+          <range_and_bearing implementation="medium" medium="rab" show_rays="true" noise_std_dev="0" packet_drop_prob="0"/>
         </sensors>
       
         <params bytecode_file="aggregation.bo" debug_file="aggregation.bdb" >
@@ -85,10 +85,6 @@
   <visualization>  
   <qt-opengl>
     
-        <camera>
-          <placement idx="0" position="-3.81904,0.306014,10.4364" look_at="-3.49366,0.212449,9.49544" lens_focal_length="20" />
-          <placement idx="1" position="-1.40203,0,3.23277" look_at="-1.08235,0,2.28525" lens_focal_length="20" />
-        </camera>
     
     <user_functions label="buzz_qt" />
     </qt-opengl>
